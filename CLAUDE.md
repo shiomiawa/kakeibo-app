@@ -4,19 +4,30 @@
 
 ## プロジェクト概要
 
-家計簿アプリ（kakeibo-app）。収支の記録・管理を行う。
+レシート画像を Claude API で読み取り、商品名・金額・日付の一覧表示、カテゴリ別の自動分類・集計、Chart.js のグラフ表示を行う家計簿Webアプリ。登録データはブラウザのローカルストレージに保存する（サーバー側にDBはない）。
 
-<!-- 技術スタック・ディレクトリ構成・コマンドが決まったら、下記のセクションを更新すること -->
+## 技術スタック・構成
+
+- フロントエンド: React + Vite（`src/`）、グラフは Chart.js（react-chartjs-2）
+- バックエンド: Node.js + Express（`server/index.js`）。Claude API の呼び出しはここだけで行う
+- 共通定義: `shared/categories.js`（カテゴリ一覧。サーバーの分類指示と画面の選択肢の両方で使う）
+- 使用モデル: Claude Haiku の最新版（`claude-haiku-4-5`）。モデルIDは `server/index.js` の `MODEL` 定数で管理する
+- 開発時は Vite が `/api` をバックエンド（3001番ポート）へ中継する（`vite.config.js`）
+
+### 守ること
+
+- **Claude API のキーは `.env`（`ANTHROPIC_API_KEY`）だけで管理する。** ブラウザ側のコードからAPIキーやClaude APIを直接使わない。`.env` はコミットしない（`.env.example` のみコミットする）。
+- コード内のコメントは日本語で書く。
+- カテゴリを増減するときは `shared/categories.js` と、色の定義（`src/constants.js` の `CATEGORY_COLORS`）を合わせて更新する。
+- ローカルストレージのデータ形式を変える場合は、`src/constants.js` の `STORAGE_KEY` のバージョンを上げるか、移行処理を入れる。
 
 ## 開発コマンド
 
-まだ未定。セットアップ後に、以下を追記すること。
-
-- 依存関係のインストール
-- 開発サーバーの起動
-- ビルド
-- テスト（単一テストの実行方法も）
-- Lint / フォーマット
+- 依存関係のインストール: `npm install`（初回は `.env.example` を `.env` にコピーしてキーを設定）
+- 開発サーバー（フロント:5173 + バックエンド:3001）: `npm run dev`
+- フロントのビルド: `npm run build`
+- 本番起動（ビルド済みの `dist/` もバックエンドから配信）: `npm start`
+- テスト・Lint: 未導入
 
 ## Git運用ルール
 
