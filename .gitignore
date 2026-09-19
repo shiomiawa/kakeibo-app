@@ -1,0 +1,17 @@
+# 依存パッケージ
+node_modules/
+
+# ビルド成果物
+dist/
+
+# 環境変数（APIキーなどの秘密情報）
+.env
+.env.*
+!.env.example
+
+# ログ・OS・エディタ
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
