@@ -3,7 +3,7 @@ import { receiptTotal } from '../utils/aggregate.js';
 import { formatYen } from '../utils/format.js';
 
 // 登録済みのレシートを、日付の新しい順に一覧表示する。
-export default function ReceiptList({ receipts, onDelete }) {
+export default function ReceiptList({ receipts, onEdit, onDelete }) {
   const sorted = [...receipts].sort(
     (a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt,
   );
@@ -27,6 +27,9 @@ export default function ReceiptList({ receipts, onDelete }) {
                 <span className="receipt-date">{receipt.date}</span>
                 <span className="receipt-store">{receipt.storeName || '（店舗名なし）'}</span>
                 <strong className="receipt-total">{formatYen(receiptTotal(receipt))}</strong>
+                <button type="button" className="btn small" onClick={() => onEdit(receipt)}>
+                  編集
+                </button>
                 <button type="button" className="btn icon" onClick={() => handleDelete(receipt)}>
                   削除
                 </button>

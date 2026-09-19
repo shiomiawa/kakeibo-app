@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { CATEGORIES, DEFAULT_CATEGORY } from '../constants.js';
 import { formatYen } from '../utils/format.js';
 
@@ -8,7 +9,22 @@ function toNumber(value) {
 
 // 読み取り結果の確認・修正フォーム。「登録」を押すまで保存はされない。
 // AIの読み取りミス（金額・商品名・カテゴリ）をここで直せる。
-export default function DraftEditor({ draft, previewUrl, onChange, onRegister, onCancel }) {
+// isEditing が true のときは、登録済みレシートの編集画面として使う。
+export default function DraftEditor({
+  isEditing = false,
+  draft,
+  previewUrl,
+  onChange,
+  onRegister,
+  onCancel,
+}) {
+  const sectionRef = useRef(null);
+
+  // 表示されたら画面内に移動する（一覧の下のほうから編集を始めた場合に見失わないため）
+  useEffect(() => {
+    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   const itemsSum = draft.items.reduce((sum, item) => sum + toNumber(item.price), 0);
   const totalMismatch = draft.total > 0 && draft.total !== itemsSum;
   const canRegister = draft.items.length > 0 && draft.date !== '';
@@ -37,9 +53,13 @@ export default function DraftEditor({ draft, previewUrl, onChange, onRegister, o
   }
 
   return (
-    <section className="card">
-      <h2>読み取り結果の確認</h2>
-      <p className="hint">内容を確認し、必要なら修正してから「登録」を押してください。</p>
+    <section className="card" ref={sectionRef}>
+      <h2>{isEditing ? '登録済みレシートの編集' : '読み取り結果の確認'}</h2>
+      <p className="hint">
+        {isEditing
+          ? '内容を修正して「保存」を押してください。'
+          : '内容を確認し、必要なら修正してから「登録」を押してください。'}
+      </p>
 
       <div className="draft-layout">
         {previewUrl && <img className="preview" src={previewUrl} alt="読み込んだレシート" />}
@@ -143,10 +163,10 @@ export default function DraftEditor({ draft, previewUrl, onChange, onRegister, o
 
           <div className="actions">
             <button type="button" className="btn primary" disabled={!canRegister} onClick={onRegister}>
-              登録
+              {isEditing ? '保存' : '登録'}
             </button>
             <button type="button" className="btn" onClick={onCancel}>
-              破棄
+              {isEditing ? 'キャンセル' : '破棄'}
             </button>
           </div>
         </div>

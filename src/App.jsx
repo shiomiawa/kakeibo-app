@@ -13,6 +13,8 @@ export default function App() {
   const [receipts, setReceipts] = useLocalStorage(STORAGE_KEY, []);
   // 読み取り直後の確認中データ（「登録」を押すまで保存されない）
   const [draft, setDraft] = useState(null);
+  // 登録済みレシートを編集している場合はそのID（新規の読み取り結果を確認中なら null）
+  const [editingId, setEditingId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   // 集計・一覧の対象月（空文字は全期間）
   const [month, setMonth] = useState('');
@@ -39,11 +41,26 @@ export default function App() {
       total: result.total,
       items: result.items,
     });
+    setEditingId(null);
     setPreviewUrl(url);
   }
 
   function closeDraft() {
     setDraft(null);
+    setEditingId(null);
+    setPreviewUrl('');
+  }
+
+  // 登録済みレシートを確認画面に読み込む（画像は保存していないためプレビューなし）
+  function handleEdit(receipt) {
+    setDraft({
+      storeName: receipt.storeName,
+      date: receipt.date,
+      // 読み取り時の合計は保存していないため 0 にして、合計の不一致警告は出さない
+      total: 0,
+      items: receipt.items.map((item) => ({ ...item })),
+    });
+    setEditingId(receipt.id);
     setPreviewUrl('');
   }
 
@@ -60,21 +77,34 @@ export default function App() {
 
     if (items.length === 0) return;
 
-    setReceipts((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        storeName: draft.storeName.trim(),
-        date: draft.date,
-        items,
-        createdAt: Date.now(),
-      },
-    ]);
+    const storeName = draft.storeName.trim();
+
+    if (editingId) {
+      // 編集: ID と登録日時は保ったまま、内容だけ差し替える
+      setReceipts((prev) =>
+        prev.map((receipt) =>
+          receipt.id === editingId ? { ...receipt, storeName, date: draft.date, items } : receipt,
+        ),
+      );
+    } else {
+      setReceipts((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          storeName,
+          date: draft.date,
+          items,
+          createdAt: Date.now(),
+        },
+      ]);
+    }
     closeDraft();
   }
 
   function handleDelete(id) {
     setReceipts((prev) => prev.filter((receipt) => receipt.id !== id));
+    // 編集中のレシートを削除した場合は、編集画面も閉じる
+    if (id === editingId) closeDraft();
   }
 
   return (
@@ -89,6 +119,9 @@ export default function App() {
 
         {draft && (
           <DraftEditor
+            // 編集対象が変わったときは、入力内容ごと作り直す
+            key={editingId ?? 'new'}
+            isEditing={editingId !== null}
             draft={draft}
             previewUrl={previewUrl}
             onChange={setDraft}
@@ -121,7 +154,7 @@ export default function App() {
 
         <Charts scopeReceipts={scopeReceipts} allReceipts={receipts} scopeLabel={scopeLabel} />
 
-        <ReceiptList receipts={scopeReceipts} onDelete={handleDelete} />
+        <ReceiptList receipts={scopeReceipts} onEdit={handleEdit} onDelete={handleDelete} />
       </main>
     </div>
   );

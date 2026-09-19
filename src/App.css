@@ -96,6 +96,12 @@ h2 {
   color: var(--danger);
 }
 
+/* 削除ではない操作用の小さいボタン（編集など） */
+.btn.small {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
