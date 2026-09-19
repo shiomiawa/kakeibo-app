@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { CATEGORIES, DEFAULT_CATEGORY } from '../constants.js';
 import { formatYen } from '../utils/format.js';
+import { findNegativeItems } from '../utils/validate.js';
 
 // 金額入力欄は、入力途中（空欄・「-」だけ）の状態も許すため文字列も受け付ける
 function toNumber(value) {
@@ -10,9 +11,11 @@ function toNumber(value) {
 // 読み取り結果の確認・修正フォーム。「登録」を押すまで保存はされない。
 // AIの読み取りミス（金額・商品名・カテゴリ）をここで直せる。
 // isEditing が true のときは、登録済みレシートの編集画面として使う。
+// duplicate は、同じ購入日・合計金額の登録済みレシート（なければ null）。
 export default function DraftEditor({
   isEditing = false,
   draft,
+  duplicate = null,
   previewUrl,
   onChange,
   onRegister,
@@ -27,7 +30,8 @@ export default function DraftEditor({
 
   const itemsSum = draft.items.reduce((sum, item) => sum + toNumber(item.price), 0);
   const totalMismatch = draft.total > 0 && draft.total !== itemsSum;
-  const canRegister = draft.items.length > 0 && draft.date !== '';
+  const negativeIndexes = findNegativeItems(draft.items);
+  const canRegister =draft.items.length > 0 && draft.date !== '';
 
   function updateItem(index, patch) {
     onChange({
@@ -109,7 +113,7 @@ export default function DraftEditor({
                       <input
                         type="text"
                         inputMode="numeric"
-                        className="price-input"
+                        className={`price-input${negativeIndexes.includes(index) ? ' negative' : ''}`}
                         value={item.price}
                         aria-label="金額"
                         onChange={(event) => handlePriceChange(index, event.target.value)}
@@ -155,6 +159,19 @@ export default function DraftEditor({
             <p className="message warn">
               レシート記載の合計（{formatYen(draft.total)}）と商品合計が一致しません。
               読み取り漏れや、税抜き表記の可能性があります。
+            </p>
+          )}
+          {negativeIndexes.length > 0 && (
+            <p className="message warn">
+              マイナスの金額があります（{negativeIndexes.map((index) => `${index + 1}行目`).join('、')}
+              ）。値引き・割引の行でなければ、金額を確認してください。
+            </p>
+          )}
+          {duplicate && (
+            <p className="message warn">
+              同じ購入日（{duplicate.date}）・合計金額（{formatYen(itemsSum)}）のレシート
+              {duplicate.storeName && `（${duplicate.storeName}）`}
+              が既に登録されています。二重登録でないか確認してください。
             </p>
           )}
           {draft.items.length === 0 && (

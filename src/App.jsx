@@ -7,6 +7,7 @@ import { STORAGE_KEY } from './constants.js';
 import { useLocalStorage } from './hooks/useLocalStorage.js';
 import { filterByMonth, listMonths, receiptTotal } from './utils/aggregate.js';
 import { formatMonth, formatYen, todayString } from './utils/format.js';
+import { findDuplicateReceipt } from './utils/validate.js';
 
 export default function App() {
   // 登録済みレシート。ローカルストレージに保存されるため、リロードしても残る
@@ -32,6 +33,8 @@ export default function App() {
   const scopeReceipts = filterByMonth(receipts, activeMonth);
   const scopeTotal = scopeReceipts.reduce((sum, receipt) => sum + receiptTotal(receipt), 0);
   const scopeLabel = activeMonth ? formatMonth(activeMonth) : '全期間';
+  // 確認中の内容と同じ購入日・合計金額の登録済みレシート（二重登録の警告用）
+  const duplicate = draft ? findDuplicateReceipt(receipts, draft, editingId) : null;
 
   function handleAnalyzed(result, url) {
     setDraft({
@@ -123,6 +126,7 @@ export default function App() {
             key={editingId ?? 'new'}
             isEditing={editingId !== null}
             draft={draft}
+            duplicate={duplicate}
             previewUrl={previewUrl}
             onChange={setDraft}
             onRegister={handleRegister}

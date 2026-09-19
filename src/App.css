@@ -248,6 +248,12 @@ select {
   text-align: right;
 }
 
+/* 負の金額の入力欄を強調する（警告メッセージとあわせて表示） */
+.price-input.negative {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 .draft-total {
   margin: 0;
   text-align: right;
